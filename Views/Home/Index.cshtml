@@ -1,0 +1,224 @@
+﻿@model DashboardViewModel
+@{
+    ViewData["Title"] = "Dashboard";
+
+    var totales = Model.SerieVentas.Count > 0 ? Model.SerieVentas.Select(s => s.Total).ToList() : new List<decimal> { 0 };
+    var maximo = totales.Max() > 0 ? totales.Max() : 1;
+    var ancho = 700.0;
+    var alto = 190.0;
+    var padX = 36.0;
+    var padY = 22.0;
+    var paso = Model.SerieVentas.Count > 1 ? (ancho - 2 * padX) / (Model.SerieVentas.Count - 1) : 0;
+    var puntos = Model.SerieVentas.Select((s, i) => new
+    {
+        X = padX + i * paso,
+        Y = alto - padY - (double)(s.Total / maximo) * (alto - 2 * padY)
+    }).ToList();
+    var linea = string.Join(" ", puntos.Select(p => $"{p.X:F1},{p.Y:F1}"));
+    var area = $"{padX:F1},{alto - padY:F1} " + linea + $" {ancho - padX:F1},{alto - padY:F1}";
+}
+
+<div class="page-heading">
+    <div>
+        <h1>Dashboard</h1>
+        <p>Indicadores en tiempo real de la operación comercial.</p>
+    </div>
+    <a asp-controller="Ventas" asp-action="Index" class="btn btn-pink">
+        <i class="bi bi-cart-plus-fill"></i> Nueva venta
+    </a>
+</div>
+
+<div class="row g-3 mb-4">
+    <div class="col-12 col-sm-6 col-xl-3">
+        <div class="stat-card">
+            <div class="stat-icon"><i class="bi bi-cash-stack"></i></div>
+            <div class="stat-label">Ventas del día</div>
+            <div class="stat-value">S/ @Model.VentasHoy.ToString("N2")</div>
+            <div class="stat-foot">@Model.VentasHoyCantidad comprobante(s) hoy</div>
+        </div>
+    </div>
+    <div class="col-12 col-sm-6 col-xl-3">
+        <div class="stat-card">
+            <div class="stat-icon"><i class="bi bi-calendar-check"></i></div>
+            <div class="stat-label">Ventas del mes</div>
+            <div class="stat-value">S/ @Model.VentasMes.ToString("N2")</div>
+            <div class="stat-foot">Ingresos acumulados del mes</div>
+        </div>
+    </div>
+    <div class="col-12 col-sm-6 col-xl-3">
+        <div class="stat-card">
+            <div class="stat-icon"><i class="bi bi-box-seam"></i></div>
+            <div class="stat-label">Productos registrados</div>
+            <div class="stat-value">@Model.ProductosRegistrados</div>
+            <div class="stat-foot">Productos activos en catálogo</div>
+        </div>
+    </div>
+    <div class="col-12 col-sm-6 col-xl-3">
+        <div class="stat-card">
+            <div class="stat-icon text-danger"><i class="bi bi-exclamation-octagon"></i></div>
+            <div class="stat-label">Productos con stock bajo</div>
+            <div class="stat-value text-danger">@Model.ProductosStockBajo</div>
+            <div class="stat-foot">Requieren reposición</div>
+        </div>
+    </div>
+</div>
+
+<div class="row g-3 mb-4">
+    <div class="col-12 col-lg-8">
+        <div class="card-eo h-100">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <span><i class="bi bi-graph-up"></i> Evolución de ventas</span>
+                <span class="badge-eo">Últimos 7 días</span>
+            </div>
+            <div class="card-body">
+                <div class="chart-wrap">
+                    <svg class="chart-svg" viewBox="0 0 @ancho @alto" preserveAspectRatio="none" role="img" aria-label="Gráfico de ventas de los últimos 7 días">
+                        <defs>
+                            <linearGradient id="eoGradient" x1="0" y1="0" x2="0" y2="1">
+                                <stop offset="0%" stop-color="#db2777" stop-opacity="0.35" />
+                                <stop offset="100%" stop-color="#db2777" stop-opacity="0.02" />
+                            </linearGradient>
+                        </defs>
+                        @for (var i = 0; i <= 3; i++)
+                        {
+                            var y = padY + i * (alto - 2 * padY) / 3;
+                            <line x1="@padX" y1="@y" x2="@(ancho - padX)" y2="@y" stroke="#eee8f7" stroke-width="1" />
+                        }
+                        @if (puntos.Count > 1)
+                        {
+                            <polygon points="@area" class="chart-area" />
+                            <polyline points="@linea" class="chart-line" />
+                            @foreach (var punto in puntos)
+                            {
+                                <circle cx="@punto.X" cy="@punto.Y" r="4" class="chart-dot" />
+                            }
+                        }
+                        @for (var i = 0; i < Model.SerieVentas.Count; i++)
+                        {
+                            var x = padX + i * paso;
+                            <svg:text x="@x" y="@(alto - 4)" text-anchor="middle" class="chart-label">@Model.SerieVentas[i].Fecha.ToString("dd/MM")</svg:text>
+                        }
+                    </svg>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-12 col-lg-4">
+        <div class="card-eo h-100">
+            <div class="card-header"><i class="bi bi-wallet2"></i> Ingresos por método de pago</div>
+            <div class="card-body">
+                @if (Model.IngresosPorMetodoPago.Count == 0)
+                {
+                    <div class="empty-state small">Sin ventas registradas en el mes.</div>
+                }
+                else
+                {
+                    @foreach (var ingreso in Model.IngresosPorMetodoPago)
+                    {
+                        <div class="d-flex justify-content-between align-items-center py-2 border-bottom">
+                            <span><strong>@ingreso.Metodo</strong><br /><small class="text-muted">@ingreso.Cantidad operación(es)</small></span>
+                            <strong class="text-purple">S/ @ingreso.Total.ToString("N2")</strong>
+                        </div>
+                    }
+                }
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row g-3">
+    <div class="col-12 col-lg-6">
+        <div class="card-eo h-100">
+            <div class="card-header d-flex justify-content-between">
+                <span><i class="bi bi-clock-history"></i> Últimas ventas</span>
+                <a asp-controller="Ventas" asp-action="Historial" class="small">Ver todas</a>
+            </div>
+            <div class="card-body p-0">
+                <div class="table-responsive">
+                    <table class="table table-eo mb-0">
+                        <thead>
+                            <tr>
+                                <th>Comprobante</th>
+                                <th>Cliente</th>
+                                <th>Ambiente</th>
+                                <th class="text-end">Total</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @if (Model.UltimasVentas.Count == 0)
+                            {
+                                <tr><td colspan="4" class="empty-state">No hay ventas registradas.</td></tr>
+                            }
+                            @foreach (var venta in Model.UltimasVentas)
+                            {
+                                <tr>
+                                    <td>
+                                        <strong>@venta.NumeroComprobante</strong><br />
+                                        <small class="text-muted">@venta.Fecha.ToString("dd/MM HH:mm")</small>
+                                    </td>
+                                    <td>@venta.Cliente</td>
+                                    <td><span class="badge-eo">@venta.PuntoVenta</span></td>
+                                    <td class="text-end fw-bold">S/ @venta.Total.ToString("N2")</td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-12 col-lg-6">
+        <div class="card-eo h-100">
+            <div class="card-header"><i class="bi bi-fire"></i> Productos más vendidos del mes</div>
+            <div class="card-body p-0">
+                <div class="table-responsive">
+                    <table class="table table-eo mb-0">
+                        <thead>
+                            <tr>
+                                <th>Producto</th>
+                                <th class="text-center">Unidades</th>
+                                <th class="text-end">Importe</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @if (Model.ProductosMasVendidos.Count == 0)
+                            {
+                                <tr><td colspan="3" class="empty-state">Sin datos del mes.</td></tr>
+                            }
+                            @foreach (var producto in Model.ProductosMasVendidos)
+                            {
+                                <tr>
+                                    <td>@producto.Nombre</td>
+                                    <td class="text-center"><span class="badge-eo">@producto.Cantidad</span></td>
+                                    <td class="text-end fw-bold">S/ @producto.Total.ToString("N2")</td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row g-3 mt-1">
+    <div class="col-12 col-lg-6">
+        <div class="stat-card d-flex align-items-center gap-3">
+            <div class="stat-icon mb-0"><i class="bi bi-people-fill"></i></div>
+            <div>
+                <div class="stat-label">Clientes registrados</div>
+                <div class="stat-value">@Model.ClientesRegistrados</div>
+            </div>
+        </div>
+    </div>
+    <div class="col-12 col-lg-6">
+        <div class="stat-card d-flex align-items-center gap-3">
+            <div class="stat-icon mb-0"><i class="bi bi-shop"></i></div>
+            <div>
+                <div class="stat-label">Ambientes operativos</div>
+                <div class="stat-value">@Model.AmbientesActivos</div>
+                <div class="stat-foot">Ambientes activos del sistema</div>
+            </div>
+        </div>
+    </div>
+</div>

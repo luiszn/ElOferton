@@ -1,0 +1,10 @@
+@model VentaDetalleViewModel
+@{
+    ViewData["Title"] = "Reimprimir comprobante";
+}
+
+<div class="no-print d-flex justify-content-start mb-3">
+    <a asp-action="Detalle" asp-route-id="@Model.Venta.VentaId" class="btn btn-light"><i class="bi bi-arrow-left"></i> Volver al detalle</a>
+</div>
+
+<partial name="_Comprobante" model="Model.Venta" />

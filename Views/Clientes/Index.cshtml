@@ -1,0 +1,75 @@
+@model ClienteListViewModel
+@{
+    ViewData["Title"] = "Clientes";
+}
+
+<div class="page-heading">
+    <div>
+        <h1>Clientes</h1>
+        <p>Clientes registrados y su historial de compras.</p>
+    </div>
+    <a asp-action="Create" class="btn btn-eo"><i class="bi bi-person-plus"></i> Nuevo cliente</a>
+</div>
+
+<div class="card-eo mb-3">
+    <div class="card-body">
+        <form asp-action="Index" method="get" class="filter-bar">
+            <div class="flex-grow-1" style="min-width: 260px;">
+                <label class="form-label small fw-semibold" for="buscar">Buscar</label>
+                <input id="buscar" name="buscar" value="@Model.Buscar" class="form-control" placeholder="Nombre, documento, teléfono o correo" data-table-filter="tablaClientes" />
+            </div>
+            <button type="submit" class="btn btn-eo"><i class="bi bi-search"></i> Filtrar</button>
+            <a asp-action="Index" class="btn btn-light">Limpiar</a>
+        </form>
+    </div>
+</div>
+
+<div class="card-eo">
+    <div class="card-body p-0">
+        <div class="table-responsive">
+            <table class="table table-eo mb-0" id="tablaClientes">
+                <thead>
+                    <tr>
+                        <th>Cliente</th>
+                        <th>Documento</th>
+                        <th>Contacto</th>
+                        <th class="text-center">Compras</th>
+                        <th class="text-end">Total compras</th>
+                        <th>Estado</th>
+                        <th class="text-end no-print">Acciones</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @if (Model.Clientes.Count == 0)
+                    {
+                        <tr><td colspan="7" class="empty-state">No se encontraron clientes.</td></tr>
+                    }
+                    @foreach (var cliente in Model.Clientes)
+                    {
+                        <tr>
+                            <td><strong>@cliente.Nombre</strong></td>
+                            <td>@cliente.TipoDocumento @cliente.NumeroDocumento</td>
+                            <td>
+                                @cliente.Telefono
+                                @if (!string.IsNullOrWhiteSpace(cliente.Email))
+                                {
+                                    <br /><small class="text-muted">@cliente.Email</small>
+                                }
+                            </td>
+                            <td class="text-center"><span class="badge-eo">@cliente.CantidadCompras</span></td>
+                            <td class="text-end fw-semibold">S/ @cliente.TotalCompras.ToString("N2")</td>
+                            <td><span class="badge @(cliente.Activo ? "bg-success" : "bg-secondary")">@(cliente.Activo ? "Activo" : "Inactivo")</span></td>
+                            <td class="text-end no-print">
+                                <a asp-action="Details" asp-route-id="@cliente.Id" class="btn btn-sm btn-outline-primary" title="Ver"><i class="bi bi-eye"></i></a>
+                                <a asp-action="Edit" asp-route-id="@cliente.Id" class="btn btn-sm btn-outline-secondary" title="Editar"><i class="bi bi-pencil"></i></a>
+                                <form asp-action="ToggleEstado" asp-route-id="@cliente.Id" method="post" class="d-inline" data-confirm="¿Cambiar el estado del cliente?">
+                                    <button type="submit" class="btn btn-sm btn-outline-warning" title="Cambiar estado"><i class="bi bi-toggle-on"></i></button>
+                                </form>
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>

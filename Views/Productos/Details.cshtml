@@ -1,0 +1,84 @@
+@model ProductoDetalleViewModel
+@{
+    ViewData["Title"] = "Detalle del producto";
+    var producto = Model.Producto;
+}
+
+<div class="page-heading">
+    <div>
+        <h1>@producto.Nombre</h1>
+        <p>Código <strong>@producto.Codigo</strong> · @producto.Categoria / @producto.Marca</p>
+    </div>
+    <div>
+        <a asp-action="Index" class="btn btn-light"><i class="bi bi-arrow-left"></i> Volver</a>
+        @if (User.IsInRole(Roles.Administrador) || User.IsInRole(Roles.Almacenero))
+        {
+            <a asp-action="Edit" asp-route-id="@producto.Id" class="btn btn-eo"><i class="bi bi-pencil"></i> Editar</a>
+        }
+    </div>
+</div>
+
+<div class="row g-3">
+    <div class="col-12 col-lg-4">
+        <div class="card-eo text-center p-4">
+            @if (!string.IsNullOrWhiteSpace(producto.ImagenUrl))
+            {
+                <img src="@producto.ImagenUrl" alt="@producto.Nombre" class="img-fluid rounded" style="max-height: 220px; object-fit: contain;" />
+            }
+            else
+            {
+                <div class="empty-state"><i class="bi bi-image display-4"></i><p>Sin imagen registrada</p></div>
+            }
+            <hr />
+            <span class="badge @(producto.Activo ? "bg-success" : "bg-secondary")">@(producto.Activo ? "Activo" : "Inactivo")</span>
+        </div>
+    </div>
+    <div class="col-12 col-lg-8">
+        <div class="card-eo mb-3">
+            <div class="card-header">Información comercial</div>
+            <div class="card-body">
+                <dl class="row mb-0">
+                    <dt class="col-sm-4">Precio de compra</dt>
+                    <dd class="col-sm-8">S/ @producto.PrecioCompra.ToString("N2")</dd>
+                    <dt class="col-sm-4">Precio de venta</dt>
+                    <dd class="col-sm-8 fw-bold text-purple">S/ @producto.PrecioVenta.ToString("N2")</dd>
+                    <dt class="col-sm-4">Stock total</dt>
+                    <dd class="col-sm-8">@producto.StockTotal unidades</dd>
+                    <dt class="col-sm-4">Stock mínimo</dt>
+                    <dd class="col-sm-8">@producto.StockMinimo unidades</dd>
+                </dl>
+            </div>
+        </div>
+
+        <div class="card-eo">
+            <div class="card-header"><i class="bi bi-building"></i> Stock por ambiente</div>
+            <div class="card-body p-0">
+                <div class="table-responsive">
+                    <table class="table table-eo mb-0">
+                        <thead>
+                            <tr>
+                                <th>Ambiente</th>
+                                <th>Tipo</th>
+                                <th class="text-end">Cantidad</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @if (Model.Stocks.Count == 0)
+                            {
+                                <tr><td colspan="3" class="empty-state">Sin inventario registrado.</td></tr>
+                            }
+                            @foreach (var stock in Model.Stocks)
+                            {
+                                <tr>
+                                    <td><strong>@stock.Ambiente</strong></td>
+                                    <td><span class="badge-eo">@stock.Tipo</span></td>
+                                    <td class="text-end fw-bold">@stock.Cantidad</td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>

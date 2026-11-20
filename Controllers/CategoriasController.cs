@@ -1,0 +1,80 @@
+using ElOferton.Constants;
+using ElOferton.Services.Interfaces;
+using ElOferton.ViewModels;
+using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Mvc;
+
+namespace ElOferton.Controllers;
+
+public sealed class CategoriasController(ICatalogoService catalogoService) : BaseController
+{
+    public async Task<IActionResult> Index(string? buscar)
+    {
+        return View(await catalogoService.ObtenerCategoriasAsync(buscar));
+    }
+
+    [Authorize(Policy = Politicas.Inventario)]
+    public async Task<IActionResult> Create()
+    {
+        return View(await catalogoService.ObtenerCategoriaFormularioAsync(null));
+    }
+
+    [HttpPost]
+    [Authorize(Policy = Politicas.Inventario)]
+    [ValidateAntiForgeryToken]
+    public async Task<IActionResult> Create(CatalogoFormViewModel model)
+    {
+        Preparar(model);
+        if (!ModelState.IsValid)
+        {
+            return View(model);
+        }
+
+        var resultado = await catalogoService.GuardarCategoriaAsync(model);
+        Notificar(resultado);
+        return resultado.Exitoso ? RedirectToAction(nameof(Index)) : View(model);
+    }
+
+    [Authorize(Policy = Politicas.Inventario)]
+    public async Task<IActionResult> Edit(int id)
+    {
+        var modelo = await catalogoService.ObtenerCategoriaFormularioAsync(id);
+        return modelo is null ? NotFound() : View(modelo);
+    }
+
+    [HttpPost]
+    [Authorize(Policy = Politicas.Inventario)]
+    [ValidateAntiForgeryToken]
+    public async Task<IActionResult> Edit(int id, CatalogoFormViewModel model)
+    {
+        Preparar(model);
+        if (id != model.Id)
+        {
+            return NotFound();
+        }
+
+        if (!ModelState.IsValid)
+        {
+            return View(model);
+        }
+
+        var resultado = await catalogoService.GuardarCategoriaAsync(model);
+        Notificar(resultado);
+        return resultado.Exitoso ? RedirectToAction(nameof(Index)) : View(model);
+    }
+
+    [HttpPost]
+    [Authorize(Policy = Politicas.Inventario)]
+    [ValidateAntiForgeryToken]
+    public async Task<IActionResult> ToggleEstado(int id)
+    {
+        Notificar(await catalogoService.AlternarCategoriaAsync(id));
+        return RedirectToAction(nameof(Index));
+    }
+
+    private static void Preparar(CatalogoFormViewModel model)
+    {
+        model.Titulo = "Categoría";
+        model.Controlador = "Categorias";
+    }
+}

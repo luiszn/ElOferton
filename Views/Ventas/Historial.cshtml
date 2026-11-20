@@ -1,0 +1,80 @@
+@model VentaFiltroViewModel
+@{
+    ViewData["Title"] = "Historial de ventas";
+}
+
+<div class="page-heading">
+    <div>
+        <h1>Historial de ventas</h1>
+        <p>Consulte las ventas registradas en todos los ambientes.</p>
+    </div>
+    <a asp-action="Index" class="btn btn-eo"><i class="bi bi-cart-plus"></i> Nueva venta</a>
+</div>
+
+<div class="card-eo mb-3">
+    <div class="card-body">
+        <form asp-action="Historial" method="get" class="filter-bar">
+            <div>
+                <label asp-for="FechaInicio" class="form-label small fw-semibold"></label>
+                <input asp-for="FechaInicio" class="form-control" type="date" />
+            </div>
+            <div>
+                <label asp-for="FechaFin" class="form-label small fw-semibold"></label>
+                <input asp-for="FechaFin" class="form-control" type="date" />
+            </div>
+            <div style="min-width: 190px;">
+                <label asp-for="PuntoVentaId" class="form-label small fw-semibold"></label>
+                <select asp-for="PuntoVentaId" asp-items="Model.PuntosVenta" class="form-select"><option value="">Todos</option></select>
+            </div>
+            <div style="min-width: 190px;">
+                <label asp-for="UsuarioId" class="form-label small fw-semibold"></label>
+                <select asp-for="UsuarioId" asp-items="Model.Vendedores" class="form-select"><option value="">Todos</option></select>
+            </div>
+            <button type="submit" class="btn btn-eo"><i class="bi bi-search"></i> Filtrar</button>
+            <a asp-action="Historial" class="btn btn-light">Limpiar</a>
+        </form>
+    </div>
+</div>
+
+<div class="card-eo">
+    <div class="card-body p-0">
+        <div class="table-responsive">
+            <table class="table table-eo mb-0">
+                <thead>
+                    <tr>
+                        <th>Comprobante</th>
+                        <th>Fecha</th>
+                        <th>Cliente</th>
+                        <th>Ambiente</th>
+                        <th>Vendedor</th>
+                        <th>Pago</th>
+                        <th class="text-end">Total</th>
+                        <th class="text-end no-print">Acciones</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @if (Model.Ventas.Count == 0)
+                    {
+                        <tr><td colspan="8" class="empty-state">No se encontraron ventas.</td></tr>
+                    }
+                    @foreach (var venta in Model.Ventas)
+                    {
+                        <tr>
+                            <td><strong>@venta.NumeroComprobante</strong></td>
+                            <td>@venta.Fecha.ToString("dd/MM/yyyy HH:mm")</td>
+                            <td>@venta.Cliente</td>
+                            <td><span class="badge-eo">@venta.PuntoVenta</span></td>
+                            <td>@venta.Vendedor</td>
+                            <td>@venta.MetodoPago</td>
+                            <td class="text-end fw-bold">S/ @venta.Total.ToString("N2")</td>
+                            <td class="text-end no-print">
+                                <a asp-action="Detalle" asp-route-id="@venta.Id" class="btn btn-sm btn-outline-primary" title="Ver"><i class="bi bi-eye"></i></a>
+                                <a asp-action="Reimprimir" asp-route-id="@venta.Id" class="btn btn-sm btn-outline-secondary" title="Reimprimir"><i class="bi bi-printer"></i></a>
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>

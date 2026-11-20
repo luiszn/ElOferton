@@ -1,0 +1,63 @@
+@model VentaConfirmacionViewModel
+
+<div class="no-print d-flex justify-content-between align-items-center mb-3">
+    <a asp-controller="Ventas" asp-action="Index" class="btn btn-light"><i class="bi bi-arrow-left"></i> Nueva venta</a>
+    <button type="button" class="btn btn-eo" onclick="window.print()"><i class="bi bi-printer"></i> Imprimir</button>
+</div>
+
+<div class="comprobante">
+    <div class="comprobante-header">
+        <h2>EL OFERTÓN</h2>
+        <div>Cosmética, belleza y cuidado personal · Cajamarca</div>
+        <h3 class="mt-3 mb-0">@Model.NumeroComprobante</h3>
+        <small class="text-muted">@Model.Fecha.ToString("dd/MM/yyyy HH:mm")</small>
+    </div>
+
+    <dl class="row mb-3">
+        <dt class="col-sm-3">Cliente</dt>
+        <dd class="col-sm-9"><strong>@Model.Cliente</strong></dd>
+        <dt class="col-sm-3">Vendedor</dt>
+        <dd class="col-sm-9">@Model.Vendedor</dd>
+        <dt class="col-sm-3">Ambiente</dt>
+        <dd class="col-sm-9">@Model.PuntoVenta</dd>
+        <dt class="col-sm-3">Pago</dt>
+        <dd class="col-sm-9">@Model.MetodoPago</dd>
+    </dl>
+
+    <table class="table table-eo mb-3">
+        <thead>
+            <tr>
+                <th>Producto</th>
+                <th class="text-center">Cant.</th>
+                <th class="text-end">P. unit.</th>
+                <th class="text-end">Subtotal</th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var item in Model.Items)
+            {
+                <tr>
+                    <td><strong>@item.Nombre</strong><br /><small class="text-muted">@item.Codigo</small></td>
+                    <td class="text-center">@item.Cantidad</td>
+                    <td class="text-end">S/ @item.PrecioUnitario.ToString("N2")</td>
+                    <td class="text-end fw-semibold">S/ @item.Subtotal.ToString("N2")</td>
+                </tr>
+            }
+        </tbody>
+    </table>
+
+    <div class="ms-auto" style="max-width: 320px;">
+        <div class="total-line"><span>Subtotal</span><strong>S/ @Model.Subtotal.ToString("N2")</strong></div>
+        <div class="total-line"><span>Descuento</span><strong>S/ @Model.Descuento.ToString("N2")</strong></div>
+        <div class="total-line total-final"><span>TOTAL</span><strong>S/ @Model.Total.ToString("N2")</strong></div>
+        @if (Model.MontoRecibido.HasValue)
+        {
+            <div class="total-line"><span>Recibido</span><strong>S/ @Model.MontoRecibido.Value.ToString("N2")</strong></div>
+            <div class="total-line"><span>Vuelto</span><strong>S/ @Model.Vuelto.GetValueOrDefault().ToString("N2")</strong></div>
+        }
+    </div>
+
+    <p class="text-center text-muted small mt-4 mb-0">
+        IGV incluido en los precios · No se emite desglose de impuestos · Documento interno de venta
+    </p>
+</div>

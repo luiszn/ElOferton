@@ -1,0 +1,144 @@
+@model PosViewModel
+@{
+    ViewData["Title"] = "Punto de venta";
+    var metodoInicial = Model.MetodosPago.FirstOrDefault(m => m.Selected || m.Value == Model.MetodoPagoId.ToString());
+    var requiereMontoInicial = metodoInicial?.Text.Contains("Efectivo", StringComparison.OrdinalIgnoreCase) == true;
+}
+
+<div class="page-heading">
+    <div>
+        <h1>Punto de venta</h1>
+        <p>Registre ventas con precios y stock tomados del sistema.</p>
+    </div>
+    <a asp-action="Historial" class="btn btn-light"><i class="bi bi-clock-history"></i> Historial de ventas</a>
+</div>
+
+<form id="posForm" asp-action="Registrar" method="post" data-search-url="@Url.Action("BuscarProductos", "Ventas")">
+    <div asp-validation-summary="ModelOnly" class="alert alert-danger"></div>
+    <div id="itemsHidden"></div>
+    <script id="posItemsIniciales" type="application/json">@Json.Serialize(Model.Items)</script>
+
+    <div class="pos-layout">
+        <div>
+            <div class="card-eo mb-3">
+                <div class="card-body">
+                    <div class="row g-3">
+                        <div class="col-md-4">
+                            <label asp-for="PuntoVentaId" class="form-label fw-semibold"></label>
+                            @if (Model.EsAdministrador)
+                            {
+                                <select id="PuntoVentaId" asp-for="PuntoVentaId" asp-items="Model.PuntosVenta" class="form-select"></select>
+                            }
+                            else
+                            {
+                                <select id="PuntoVentaId" asp-for="PuntoVentaId" asp-items="Model.PuntosVenta" class="form-select" disabled></select>
+                                <input type="hidden" asp-for="PuntoVentaId" />
+                            }
+                            <span asp-validation-for="PuntoVentaId" class="text-danger"></span>
+                        </div>
+                        <div class="col-md-4">
+                            <label asp-for="ClienteId" class="form-label fw-semibold"></label>
+                            <select id="ClienteId" asp-for="ClienteId" asp-items="Model.Clientes" class="form-select">
+                                <option value="">Cliente ocasional / mostrador</option>
+                            </select>
+                            <span asp-validation-for="ClienteId" class="text-danger"></span>
+                        </div>
+                        <div class="col-md-4">
+                            <label asp-for="ClienteOcasional" class="form-label fw-semibold"></label>
+                            <input id="ClienteOcasional" asp-for="ClienteOcasional" class="form-control" placeholder="Nombre del cliente" />
+                            <span asp-validation-for="ClienteOcasional" class="text-danger"></span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="card-eo mb-3">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <span><i class="bi bi-search"></i> Buscar productos</span>
+                    <span id="productosModo" class="badge bg-light text-muted">Sugeridos</span>
+                </div>
+                <div class="card-body">
+                    <input id="productoBuscar" class="form-control pos-search" placeholder="Busque por nombre, código, categoría o marca..." autocomplete="off" />
+                    <div id="productosResultados" class="pos-results mt-3" aria-live="polite"></div>
+                </div>
+            </div>
+
+            <div class="card-eo">
+                <div class="card-header"><i class="bi bi-cart3"></i> Carrito</div>
+                <div class="card-body p-0">
+                    <div class="table-responsive">
+                        <table class="table table-eo mb-0">
+                            <thead>
+                                <tr>
+                                    <th>Producto</th>
+                                    <th class="text-center">Cant.</th>
+                                    <th class="text-end">Subtotal</th>
+                                    <th class="text-end"></th>
+                                </tr>
+                            </thead>
+                            <tbody id="carritoBody"></tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="card-eo pos-cart">
+            <div class="card-header"><i class="bi bi-receipt"></i> Datos de la venta</div>
+            <div class="card-body">
+                <div class="mb-3">
+                    <label asp-for="MetodoPagoId" class="form-label fw-semibold"></label>
+                    <select id="MetodoPagoId" asp-for="MetodoPagoId" class="form-select">
+                        @foreach (var metodo in Model.MetodosPago)
+                        {
+                            var requiereMonto = metodo.Text.Contains("Efectivo", StringComparison.OrdinalIgnoreCase);
+                            <option value="@metodo.Value" data-requiere-monto="@(requiereMonto ? "true" : "false")" selected="@(metodo.Value == Model.MetodoPagoId.ToString())">@metodo.Text</option>
+                        }
+                    </select>
+                    <span asp-validation-for="MetodoPagoId" class="text-danger"></span>
+                </div>
+
+                <div class="mb-3">
+                    <label asp-for="PorcentajeDescuento" class="form-label fw-semibold"></label>
+                    <div class="input-group">
+                        <input id="PorcentajeDescuento" asp-for="PorcentajeDescuento" class="form-control" type="number" min="0" max="10" step="0.01" readonly="@(!Model.EsAdministrador)" />
+                        <span class="input-group-text">%</span>
+                    </div>
+                    <span asp-validation-for="PorcentajeDescuento" class="text-danger"></span>
+                    @if (!Model.EsAdministrador)
+                    {
+                        <small class="text-muted">Solo el administrador puede aplicar descuentos (máx. 10%).</small>
+                    }
+                </div>
+
+                <div class="mb-3" id="montoGroup" style="display: @(requiereMontoInicial ? "block" : "none");">
+                    <label asp-for="MontoRecibido" class="form-label fw-semibold"></label>
+                    <input id="MontoRecibido" asp-for="MontoRecibido" class="form-control" type="number" step="0.01" min="0" />
+                    <span asp-validation-for="MontoRecibido" class="text-danger"></span>
+                </div>
+
+                <div class="mb-3">
+                    <label asp-for="Observaciones" class="form-label fw-semibold"></label>
+                    <textarea asp-for="Observaciones" class="form-control" rows="2"></textarea>
+                    <span asp-validation-for="Observaciones" class="text-danger"></span>
+                </div>
+
+                <div class="total-box">
+                    <div class="total-line"><span>Subtotal</span><strong id="subtotalLabel">S/ 0.00</strong></div>
+                    <div class="total-line"><span>Descuento</span><strong id="descuentoLabel">S/ 0.00</strong></div>
+                    <div class="total-line"><span>Vuelto</span><strong id="vueltoLabel">S/ 0.00</strong></div>
+                    <div class="total-line total-final"><span>TOTAL</span><strong id="totalLabel">S/ 0.00</strong></div>
+                </div>
+
+                <button type="submit" class="btn btn-pink btn-lg w-100 mt-3">
+                    <i class="bi bi-cash-coin"></i> Registrar venta
+                </button>
+            </div>
+        </div>
+    </div>
+</form>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+    <script src="~/js/pos.js" asp-append-version="true"></script>
+}

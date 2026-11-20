@@ -1,0 +1,91 @@
+@model ClienteDetalleViewModel
+@{
+    ViewData["Title"] = "Detalle del cliente";
+}
+
+<div class="page-heading">
+    <div>
+        <h1>@Model.Cliente.Nombre</h1>
+        <p>@Model.Cliente.TipoDocumento @Model.Cliente.NumeroDocumento</p>
+    </div>
+    <div>
+        <a asp-action="Index" class="btn btn-light"><i class="bi bi-arrow-left"></i> Volver</a>
+        <a asp-action="Edit" asp-route-id="@Model.Cliente.Id" class="btn btn-eo"><i class="bi bi-pencil"></i> Editar</a>
+    </div>
+</div>
+
+<div class="row g-3 mb-3">
+    <div class="col-12 col-md-4">
+        <div class="stat-card">
+            <div class="stat-icon"><i class="bi bi-receipt"></i></div>
+            <div class="stat-label">Cantidad de compras</div>
+            <div class="stat-value">@Model.Cliente.CantidadCompras</div>
+        </div>
+    </div>
+    <div class="col-12 col-md-4">
+        <div class="stat-card">
+            <div class="stat-icon"><i class="bi bi-cash-coin"></i></div>
+            <div class="stat-label">Total compras</div>
+            <div class="stat-value">S/ @Model.Cliente.TotalCompras.ToString("N2")</div>
+        </div>
+    </div>
+    <div class="col-12 col-md-4">
+        <div class="stat-card">
+            <div class="stat-icon"><i class="bi bi-telephone"></i></div>
+            <div class="stat-label">Contacto</div>
+            <div class="stat-value" style="font-size: 1.05rem;">@Model.Cliente.Telefono</div>
+            <div class="stat-foot">@Model.Cliente.Email</div>
+        </div>
+    </div>
+</div>
+
+<div class="card-eo mb-3" style="max-width: 720px;">
+    <div class="card-header">Datos del cliente</div>
+    <div class="card-body">
+        <dl class="row mb-0">
+            <dt class="col-sm-4">Dirección</dt>
+            <dd class="col-sm-8">@Model.Direccion</dd>
+            <dt class="col-sm-4">Correo</dt>
+            <dd class="col-sm-8">@Model.Cliente.Email</dd>
+            <dt class="col-sm-4">Estado</dt>
+            <dd class="col-sm-8"><span class="badge @(Model.Cliente.Activo ? "bg-success" : "bg-secondary")">@(Model.Cliente.Activo ? "Activo" : "Inactivo")</span></dd>
+        </dl>
+    </div>
+</div>
+
+<div class="card-eo">
+    <div class="card-header"><i class="bi bi-clock-history"></i> Historial de compras</div>
+    <div class="card-body p-0">
+        <div class="table-responsive">
+            <table class="table table-eo mb-0">
+                <thead>
+                    <tr>
+                        <th>Comprobante</th>
+                        <th>Fecha</th>
+                        <th>Ambiente</th>
+                        <th class="text-end">Total</th>
+                        <th class="text-end no-print"></th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @if (Model.Compras.Count == 0)
+                    {
+                        <tr><td colspan="5" class="empty-state">Sin compras registradas.</td></tr>
+                    }
+                    @foreach (var compra in Model.Compras)
+                    {
+                        <tr>
+                            <td><strong>@compra.NumeroComprobante</strong></td>
+                            <td>@compra.Fecha.ToString("dd/MM/yyyy HH:mm")</td>
+                            <td><span class="badge-eo">@compra.PuntoVenta</span></td>
+                            <td class="text-end fw-bold">S/ @compra.Total.ToString("N2")</td>
+                            <td class="text-end no-print">
+                                <a asp-controller="Ventas" asp-action="Detalle" asp-route-id="@compra.VentaId" class="btn btn-sm btn-outline-primary"><i class="bi bi-eye"></i></a>
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>

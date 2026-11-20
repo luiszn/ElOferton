@@ -1,0 +1,70 @@
+@model UsuarioListViewModel
+@{
+    ViewData["Title"] = "Usuarios";
+}
+
+<div class="page-heading">
+    <div>
+        <h1>Usuarios</h1>
+        <p>Gestión de cuentas, roles y ambientes asignados.</p>
+    </div>
+    <a asp-action="Create" class="btn btn-eo"><i class="bi bi-person-plus"></i> Nuevo usuario</a>
+</div>
+
+<div class="card-eo">
+    <div class="card-body p-0">
+        <div class="table-responsive">
+            <table class="table table-eo mb-0">
+                <thead>
+                    <tr>
+                        <th>Usuario</th>
+                        <th>Correo</th>
+                        <th>Ambiente</th>
+                        <th>Estado</th>
+                        <th style="min-width: 190px;">Rol</th>
+                        <th class="text-end no-print">Acciones</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @if (Model.Usuarios.Count == 0)
+                    {
+                        <tr><td colspan="6" class="empty-state">No hay usuarios registrados.</td></tr>
+                    }
+                    @foreach (var usuario in Model.Usuarios)
+                    {
+                        <tr>
+                            <td>
+                                <strong>@usuario.NombreCompleto</strong><br />
+                                <small class="text-muted">@usuario.UserName</small>
+                            </td>
+                            <td>@usuario.Email</td>
+                            <td><span class="badge-eo">@usuario.PuntoVenta</span></td>
+                            <td><span class="badge @(usuario.Activo ? "bg-success" : "bg-secondary")">@(usuario.Activo ? "Activo" : "Inactivo")</span></td>
+                            <td>
+                                <form asp-action="CambiarRol" method="post" class="d-flex gap-1">
+                                    <input type="hidden" name="UsuarioId" value="@usuario.Id" />
+                                    <select name="Rol" class="form-select form-select-sm">
+                                        @foreach (var rol in Roles.Todos)
+                                        {
+                                            <option value="@rol" selected="@(rol == usuario.Rol)">@rol</option>
+                                        }
+                                    </select>
+                                    <button type="submit" class="btn btn-sm btn-outline-primary" title="Cambiar rol"><i class="bi bi-check"></i></button>
+                                </form>
+                            </td>
+                            <td class="text-end no-print">
+                                <form asp-action="ToggleEstado" asp-route-id="@usuario.Id" method="post" data-confirm="¿Cambiar el estado del usuario?">
+                                    <button type="submit" class="btn btn-sm btn-outline-warning" title="Cambiar estado"><i class="bi bi-toggle-on"></i></button>
+                                </form>
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<div class="alert alert-light border mt-3">
+    <i class="bi bi-info-circle"></i> No se crearon usuarios iniciales. Use este módulo para registrar el primer usuario administrador y luego asígnelo al ambiente <strong>ADM-01</strong>.
+</div>

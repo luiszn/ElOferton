@@ -1,0 +1,86 @@
+@model ReporteFiltroViewModel
+@{
+    ViewData["Title"] = "Reportes";
+}
+
+<div class="page-heading">
+    <div>
+        <h1>Reportes</h1>
+        <p>Consulta y exporta información comercial e inventarios.</p>
+    </div>
+</div>
+
+<div class="card-eo mb-3">
+    <div class="card-body">
+        <form asp-action="Index" method="get" class="filter-bar">
+            <div style="min-width: 230px;">
+                <label asp-for="TipoReporte" class="form-label small fw-semibold"></label>
+                <select asp-for="TipoReporte" asp-items="Model.Tipos" class="form-select"></select>
+            </div>
+            <div>
+                <label asp-for="FechaInicio" class="form-label small fw-semibold"></label>
+                <input asp-for="FechaInicio" class="form-control" type="date" />
+            </div>
+            <div>
+                <label asp-for="FechaFin" class="form-label small fw-semibold"></label>
+                <input asp-for="FechaFin" class="form-control" type="date" />
+            </div>
+            <div style="min-width: 190px;">
+                <label asp-for="PuntoVentaId" class="form-label small fw-semibold"></label>
+                <select asp-for="PuntoVentaId" asp-items="Model.PuntosVenta" class="form-select"><option value="">Todos</option></select>
+            </div>
+            <button type="submit" class="btn btn-eo"><i class="bi bi-search"></i> Generar</button>
+        </form>
+    </div>
+</div>
+
+<div class="card-eo">
+    <div class="card-header d-flex justify-content-between align-items-center flex-wrap gap-2">
+        <span><i class="bi bi-file-earmark-bar-graph"></i> @Model.Titulo</span>
+        <form asp-action="ExportarCsv" method="post" class="no-print">
+            <input asp-for="TipoReporte" type="hidden" />
+            <input asp-for="FechaInicio" type="hidden" />
+            <input asp-for="FechaFin" type="hidden" />
+            <input asp-for="PuntoVentaId" type="hidden" />
+            <button type="submit" class="btn btn-sm btn-outline-success"><i class="bi bi-download"></i> Exportar CSV</button>
+        </form>
+    </div>
+    <div class="card-body p-0">
+        @if (Model.TotalGeneral.HasValue)
+        {
+            <div class="p-3 border-bottom">
+                <div class="stat-card d-inline-block" style="min-width: 220px;">
+                    <div class="stat-label">Total general</div>
+                    <div class="stat-value">S/ @Model.TotalGeneral.Value.ToString("N2")</div>
+                </div>
+            </div>
+        }
+        <div class="table-responsive">
+            <table class="table table-eo mb-0">
+                <thead>
+                    <tr>
+                        <th>Grupo</th>
+                        <th>Detalle</th>
+                        <th class="text-center">Cantidad</th>
+                        <th class="text-end">Total</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @if (Model.Filas.Count == 0)
+                    {
+                        <tr><td colspan="4" class="empty-state">No hay datos para el reporte seleccionado.</td></tr>
+                    }
+                    @foreach (var fila in Model.Filas)
+                    {
+                        <tr>
+                            <td><strong>@fila.Grupo</strong></td>
+                            <td class="text-muted">@fila.Detalle</td>
+                            <td class="text-center"><span class="badge-eo">@fila.Cantidad</span></td>
+                            <td class="text-end fw-bold">S/ @fila.Total.ToString("N2")</td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>

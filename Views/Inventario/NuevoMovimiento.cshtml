@@ -1,0 +1,123 @@
+@model MovimientoFormViewModel
+@{
+    ViewData["Title"] = "Nuevo movimiento";
+}
+
+<div class="page-heading">
+    <div>
+        <h1>Nuevo movimiento</h1>
+        <p>Registre entradas, salidas, ajustes o traspasos entre ambientes.</p>
+    </div>
+    <a asp-action="Movimientos" class="btn btn-light"><i class="bi bi-arrow-left"></i> Volver</a>
+</div>
+
+<div class="card-eo" style="max-width: 900px;">
+    <div class="card-body">
+        <form asp-action="NuevoMovimiento" method="post" id="movimientoForm">
+            <div asp-validation-summary="ModelOnly" class="text-danger mb-3"></div>
+
+            <div class="row g-3">
+                <div class="col-md-6">
+                    <label asp-for="ProductoId" class="form-label fw-semibold"></label>
+                    <select asp-for="ProductoId" asp-items="Model.Productos" class="form-select"><option value="">Seleccione</option></select>
+                    <span asp-validation-for="ProductoId" class="text-danger"></span>
+                </div>
+                <div class="col-md-6">
+                    <label asp-for="PuntoVentaId" class="form-label fw-semibold"></label>
+                    <select asp-for="PuntoVentaId" asp-items="Model.PuntosVenta" class="form-select"><option value="">Seleccione</option></select>
+                    <span asp-validation-for="PuntoVentaId" class="text-danger"></span>
+                </div>
+                <div class="col-md-4">
+                    <label asp-for="Tipo" class="form-label fw-semibold"></label>
+                    <select asp-for="Tipo" class="form-select">
+                        <option value="1">Entrada</option>
+                        <option value="2">Salida</option>
+                        <option value="3">Ajuste</option>
+                        <option value="5">Traspaso entrada</option>
+                        <option value="6">Traspaso salida</option>
+                    </select>
+                    <span asp-validation-for="Tipo" class="text-danger"></span>
+                </div>
+                <div class="col-md-4" id="destinoGroup" style="display: none;">
+                    <label asp-for="PuntoVentaDestinoId" class="form-label fw-semibold"></label>
+                    <select asp-for="PuntoVentaDestinoId" asp-items="Model.PuntosVenta" class="form-select"><option value="">Seleccione</option></select>
+                    <span asp-validation-for="PuntoVentaDestinoId" class="text-danger"></span>
+                </div>
+                <div class="col-md-4">
+                    <label class="form-label fw-semibold">Stock actual en el ambiente</label>
+                    <input id="stockActual" class="form-control" value="@Model.StockActual" readonly />
+                </div>
+                <div class="col-md-4">
+                    <label asp-for="Cantidad" class="form-label fw-semibold"></label>
+                    <input asp-for="Cantidad" class="form-control" type="number" />
+                    <span asp-validation-for="Cantidad" class="text-danger"></span>
+                </div>
+                <div class="col-8">
+                    <label asp-for="Motivo" class="form-label fw-semibold"></label>
+                    <input asp-for="Motivo" class="form-control" />
+                    <span asp-validation-for="Motivo" class="text-danger"></span>
+                </div>
+            </div>
+
+            <div class="mt-4 d-flex gap-2">
+                <button type="submit" class="btn btn-eo"><i class="bi bi-check2-circle"></i> Registrar movimiento</button>
+                <a asp-action="Movimientos" class="btn btn-light">Cancelar</a>
+            </div>
+        </form>
+    </div>
+</div>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+    <script>
+        (function () {
+            var producto = document.getElementById('ProductoId');
+            var ambiente = document.getElementById('PuntoVentaId');
+            var tipo = document.getElementById('Tipo');
+            var destino = document.getElementById('PuntoVentaDestinoId');
+            var destinoGroup = document.getElementById('destinoGroup');
+            var cantidad = document.getElementById('Cantidad');
+            var stock = document.getElementById('stockActual');
+            var url = '@Url.Action("Stock", "Inventario")';
+
+            function actualizarDestino() {
+                var valor = parseInt(tipo.value, 10);
+                destinoGroup.style.display = (valor === 5 || valor === 6) ? '' : 'none';
+                cantidad.min = valor === 3 ? '-100000' : '1';
+            }
+
+            function consultarStock() {
+                var productoId = parseInt(producto.value, 10);
+                var puntoVentaId = parseInt(ambiente.value, 10);
+                if (!productoId || !puntoVentaId) {
+                    stock.value = '0';
+                    return;
+                }
+                fetch(url + '?productoId=' + productoId + '&puntoVentaId=' + puntoVentaId)
+                    .then(function (r) { return r.json(); })
+                    .then(function (data) { stock.value = data.cantidad; })
+                    .catch(function () { stock.value = '0'; });
+            }
+
+            producto.addEventListener('change', consultarStock);
+            ambiente.addEventListener('change', consultarStock);
+            tipo.addEventListener('change', actualizarDestino);
+
+            document.getElementById('movimientoForm').addEventListener('submit', function (event) {
+                var valor = parseInt(tipo.value, 10);
+                var cantidadValor = parseInt(cantidad.value, 10);
+                if ((valor === 5 || valor === 6) && ambiente.value === destino.value) {
+                    event.preventDefault();
+                    alert('El ambiente destino debe ser distinto al origen.');
+                }
+                if (valor !== 3 && (!cantidadValor || cantidadValor < 1)) {
+                    event.preventDefault();
+                    alert('La cantidad debe ser mayor a cero.');
+                }
+            });
+
+            actualizarDestino();
+            consultarStock();
+        })();
+    </script>
+}

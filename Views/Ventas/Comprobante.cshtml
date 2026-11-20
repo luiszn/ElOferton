@@ -1,0 +1,11 @@
+@model VentaConfirmacionViewModel
+@{
+    ViewData["Title"] = "Venta registrada";
+}
+
+@if (TempData["Mensaje"] is string mensaje)
+{
+    <div class="alert alert-success"><i class="bi bi-check-circle-fill"></i> @mensaje</div>
+}
+
+<partial name="_Comprobante" model="Model" />

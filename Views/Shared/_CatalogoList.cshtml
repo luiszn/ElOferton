@@ -1,0 +1,67 @@
+@model CatalogoListViewModel
+
+<div class="page-heading">
+    <div>
+        <h1>@Model.Titulo</h1>
+        <p>Mantenimiento de @Model.Titulo.ToLowerInvariant() del catálogo.</p>
+    </div>
+    @if (User.IsInRole(Roles.Administrador) || User.IsInRole(Roles.Almacenero))
+    {
+        <a asp-controller="@Model.Controlador" asp-action="Create" class="btn btn-eo"><i class="bi bi-plus-lg"></i> Nuevo</a>
+    }
+</div>
+
+<div class="card-eo mb-3">
+    <div class="card-body">
+        <form asp-controller="@Model.Controlador" asp-action="Index" method="get" class="filter-bar">
+            <div class="flex-grow-1" style="min-width: 240px;">
+                <label class="form-label small fw-semibold" for="buscar">Buscar</label>
+                <input id="buscar" name="buscar" value="@Model.Buscar" class="form-control" placeholder="Nombre o descripción" data-table-filter="tablaCatalogo" />
+            </div>
+            <button type="submit" class="btn btn-eo"><i class="bi bi-search"></i> Filtrar</button>
+            <a asp-controller="@Model.Controlador" asp-action="Index" class="btn btn-light">Limpiar</a>
+        </form>
+    </div>
+</div>
+
+<div class="card-eo">
+    <div class="card-body p-0">
+        <div class="table-responsive">
+            <table class="table table-eo mb-0" id="tablaCatalogo">
+                <thead>
+                    <tr>
+                        <th>Nombre</th>
+                        <th>Descripción</th>
+                        <th class="text-center">Productos</th>
+                        <th>Estado</th>
+                        <th class="text-end no-print">Acciones</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @if (Model.Items.Count == 0)
+                    {
+                        <tr><td colspan="5" class="empty-state">No hay registros.</td></tr>
+                    }
+                    @foreach (var item in Model.Items)
+                    {
+                        <tr>
+                            <td><strong>@item.Nombre</strong></td>
+                            <td class="text-muted">@item.Descripcion</td>
+                            <td class="text-center"><span class="badge-eo">@item.CantidadRelacionada</span></td>
+                            <td><span class="badge @(item.Activo ? "bg-success" : "bg-secondary")">@(item.Activo ? "Activo" : "Inactivo")</span></td>
+                            <td class="text-end no-print">
+                                @if (User.IsInRole(Roles.Administrador) || User.IsInRole(Roles.Almacenero))
+                                {
+                                    <a asp-controller="@Model.Controlador" asp-action="Edit" asp-route-id="@item.Id" class="btn btn-sm btn-outline-secondary" title="Editar"><i class="bi bi-pencil"></i></a>
+                                    <form asp-controller="@Model.Controlador" asp-action="ToggleEstado" asp-route-id="@item.Id" method="post" class="d-inline" data-confirm="¿Cambiar el estado del registro?">
+                                        <button type="submit" class="btn btn-sm btn-outline-warning" title="Cambiar estado"><i class="bi bi-toggle-on"></i></button>
+                                    </form>
+                                }
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>

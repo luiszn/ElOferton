@@ -1,0 +1,28 @@
+@model ProductoFormViewModel
+@{
+    ViewData["Title"] = "Nuevo producto";
+}
+
+<div class="page-heading">
+    <div>
+        <h1>Nuevo producto</h1>
+        <p>Registre un producto en el catálogo. El stock se gestiona desde Inventario.</p>
+    </div>
+    <a asp-action="Index" class="btn btn-light"><i class="bi bi-arrow-left"></i> Volver</a>
+</div>
+
+<div class="card-eo" style="max-width: 900px;">
+    <div class="card-body">
+        <form asp-action="Create" method="post">
+            <partial name="_Form" model="Model" />
+            <div class="mt-4 d-flex gap-2">
+                <button type="submit" class="btn btn-eo"><i class="bi bi-save"></i> Guardar</button>
+                <a asp-action="Index" class="btn btn-light">Cancelar</a>
+            </div>
+        </form>
+    </div>
+</div>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}

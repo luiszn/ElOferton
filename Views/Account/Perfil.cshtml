@@ -1,0 +1,30 @@
+@model PerfilViewModel
+@{
+    ViewData["Title"] = "Mi perfil";
+}
+
+<div class="page-heading">
+    <div>
+        <h1>Mi perfil</h1>
+        <p>Información de su cuenta en EL OFERTÓN.</p>
+    </div>
+</div>
+
+<div class="card-eo" style="max-width: 720px;">
+    <div class="card-body">
+        <dl class="row mb-0">
+            <dt class="col-sm-4">Nombre completo</dt>
+            <dd class="col-sm-8">@Model.NombreCompleto</dd>
+            <dt class="col-sm-4">Correo</dt>
+            <dd class="col-sm-8">@Model.Email</dd>
+            <dt class="col-sm-4">Rol</dt>
+            <dd class="col-sm-8"><span class="badge-eo">@Model.Rol</span></dd>
+            <dt class="col-sm-4">Ambiente asignado</dt>
+            <dd class="col-sm-8">@Model.PuntoVenta</dd>
+        </dl>
+        <hr />
+        <a asp-action="CambiarPassword" class="btn btn-eo">
+            <i class="bi bi-key"></i> Cambiar contraseña
+        </a>
+    </div>
+</div>

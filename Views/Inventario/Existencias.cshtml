@@ -1,0 +1,77 @@
+@model InventarioFiltroViewModel
+@{
+    ViewData["Title"] = "Existencias";
+}
+
+<div class="page-heading">
+    <div>
+        <h1>Existencias</h1>
+        <p>Stock disponible por producto y ambiente.</p>
+    </div>
+    <div>
+        <a asp-action="Movimientos" class="btn btn-light"><i class="bi bi-list-ul"></i> Movimientos</a>
+        <a asp-action="NuevoMovimiento" class="btn btn-eo"><i class="bi bi-plus-slash-minus"></i> Nuevo movimiento</a>
+    </div>
+</div>
+
+<div class="card-eo mb-3">
+    <div class="card-body">
+        <form asp-action="Existencias" method="get" class="filter-bar">
+            <div class="flex-grow-1" style="min-width: 240px;">
+                <label class="form-label small fw-semibold" for="buscar">Buscar</label>
+                <input id="buscar" name="buscar" value="@Model.Buscar" class="form-control" placeholder="Código o producto" data-table-filter="tablaExistencias" />
+            </div>
+            <div style="min-width: 200px;">
+                <label class="form-label small fw-semibold" for="puntoVentaId">Ambiente</label>
+                <select id="puntoVentaId" name="puntoVentaId" asp-items="Model.PuntosVenta" class="form-select">
+                    <option value="">Todos</option>
+                </select>
+            </div>
+            <div>
+                <label class="form-label small fw-semibold" for="soloStockBajo">Stock</label>
+                <select id="soloStockBajo" name="soloStockBajo" class="form-select">
+                    <option value="false" selected="@(Model.SoloStockBajo == false)">Todos</option>
+                    <option value="true" selected="@(Model.SoloStockBajo == true)">Solo stock bajo</option>
+                </select>
+            </div>
+            <button type="submit" class="btn btn-eo"><i class="bi bi-search"></i> Filtrar</button>
+            <a asp-action="Existencias" class="btn btn-light">Limpiar</a>
+        </form>
+    </div>
+</div>
+
+<div class="card-eo">
+    <div class="card-body p-0">
+        <div class="table-responsive">
+            <table class="table table-eo mb-0" id="tablaExistencias">
+                <thead>
+                    <tr>
+                        <th>Código</th>
+                        <th>Producto</th>
+                        <th>Ambiente</th>
+                        <th class="text-end">Cantidad</th>
+                        <th>Estado</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @if (Model.Items.Count == 0)
+                    {
+                        <tr><td colspan="5" class="empty-state">No hay existencias para los filtros seleccionados.</td></tr>
+                    }
+                    @foreach (var item in Model.Items)
+                    {
+                        <tr>
+                            <td><strong>@item.Codigo</strong></td>
+                            <td>@item.Nombre</td>
+                            <td><span class="badge-eo">@item.Ambiente</span></td>
+                            <td class="text-end fw-bold">@item.Cantidad</td>
+                            <td>
+                                <span class="badge @(item.StockBajo ? "bg-danger" : "bg-success")">@(item.StockBajo ? "Stock bajo" : "Normal")</span>
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>

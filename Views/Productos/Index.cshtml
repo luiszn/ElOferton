@@ -1,0 +1,106 @@
+@model ProductoListViewModel
+@{
+    ViewData["Title"] = "Productos";
+}
+
+<div class="page-heading">
+    <div>
+        <h1>Productos</h1>
+        <p>Catálogo de cosmética, belleza y cuidado personal.</p>
+    </div>
+    @if (User.IsInRole(Roles.Administrador) || User.IsInRole(Roles.Almacenero))
+    {
+        <a asp-action="Create" class="btn btn-eo"><i class="bi bi-plus-lg"></i> Nuevo producto</a>
+    }
+</div>
+
+<div class="card-eo mb-3">
+    <div class="card-body">
+        <form asp-action="Index" method="get" class="filter-bar">
+            <div class="flex-grow-1" style="min-width: 220px;">
+                <label class="form-label small fw-semibold" for="buscar">Buscar</label>
+                <input id="buscar" name="buscar" value="@Model.Buscar" class="form-control" placeholder="Código, nombre o categoría" data-table-filter="tablaProductos" />
+            </div>
+            <div style="min-width: 180px;">
+                <label class="form-label small fw-semibold" for="categoriaId">Categoría</label>
+                <select id="categoriaId" name="categoriaId" asp-items="Model.Categorias" class="form-select">
+                    <option value="">Todas</option>
+                </select>
+            </div>
+            <div style="min-width: 180px;">
+                <label class="form-label small fw-semibold" for="marcaId">Marca</label>
+                <select id="marcaId" name="marcaId" asp-items="Model.Marcas" class="form-select">
+                    <option value="">Todas</option>
+                </select>
+            </div>
+            <div>
+                <label class="form-label small fw-semibold" for="soloActivos">Estado</label>
+                <select id="soloActivos" name="soloActivos" class="form-select">
+                    <option value="true" selected="@(Model.SoloActivos == true)">Activos</option>
+                    <option value="false" selected="@(Model.SoloActivos == false)">Inactivos</option>
+                </select>
+            </div>
+            <button type="submit" class="btn btn-eo"><i class="bi bi-search"></i> Filtrar</button>
+            <a asp-action="Index" class="btn btn-light">Limpiar</a>
+        </form>
+    </div>
+</div>
+
+<div class="card-eo">
+    <div class="card-body p-0">
+        <div class="table-responsive">
+            <table class="table table-eo mb-0" id="tablaProductos">
+                <thead>
+                    <tr>
+                        <th>Código</th>
+                        <th>Producto</th>
+                        <th>Categoría</th>
+                        <th>Marca</th>
+                        <th class="text-end">Precio venta</th>
+                        <th class="text-center">Stock total</th>
+                        <th>Estado</th>
+                        <th class="text-end no-print">Acciones</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @if (Model.Productos.Count == 0)
+                    {
+                        <tr><td colspan="8" class="empty-state">No se encontraron productos.</td></tr>
+                    }
+                    @foreach (var producto in Model.Productos)
+                    {
+                        <tr>
+                            <td><strong>@producto.Codigo</strong></td>
+                            <td>
+                                <strong>@producto.Nombre</strong>
+                                @if (!string.IsNullOrWhiteSpace(producto.ImagenUrl))
+                                {
+                                    <a href="@producto.ImagenUrl" target="_blank" rel="noopener" class="ms-1 small"><i class="bi bi-image"></i></a>
+                                }
+                            </td>
+                            <td>@producto.Categoria</td>
+                            <td>@producto.Marca</td>
+                            <td class="text-end fw-semibold">S/ @producto.PrecioVenta.ToString("N2")</td>
+                            <td class="text-center">
+                                <span class="badge-eo @(producto.StockTotal <= producto.StockMinimo ? "bg-danger" : "")">@producto.StockTotal</span>
+                            </td>
+                            <td>
+                                <span class="badge @(producto.Activo ? "bg-success" : "bg-secondary")">@(producto.Activo ? "Activo" : "Inactivo")</span>
+                            </td>
+                            <td class="text-end no-print">
+                                <a asp-action="Details" asp-route-id="@producto.Id" class="btn btn-sm btn-outline-primary" title="Ver"><i class="bi bi-eye"></i></a>
+                                @if (User.IsInRole(Roles.Administrador) || User.IsInRole(Roles.Almacenero))
+                                {
+                                    <a asp-action="Edit" asp-route-id="@producto.Id" class="btn btn-sm btn-outline-secondary" title="Editar"><i class="bi bi-pencil"></i></a>
+                                    <form asp-action="ToggleEstado" asp-route-id="@producto.Id" method="post" class="d-inline" data-confirm="¿Cambiar el estado del producto?">
+                                        <button type="submit" class="btn btn-sm btn-outline-warning" title="Cambiar estado"><i class="bi bi-toggle-on"></i></button>
+                                    </form>
+                                }
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>

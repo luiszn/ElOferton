@@ -1,0 +1,87 @@
+@model MovimientoFiltroViewModel
+@{
+    ViewData["Title"] = "Movimientos de inventario";
+}
+
+<div class="page-heading">
+    <div>
+        <h1>Movimientos de inventario</h1>
+        <p>Trazabilidad de entradas, salidas, ajustes y traspasos.</p>
+    </div>
+    <div>
+        <a asp-action="Existencias" class="btn btn-light"><i class="bi bi-boxes"></i> Existencias</a>
+        <a asp-action="NuevoMovimiento" class="btn btn-eo"><i class="bi bi-plus-slash-minus"></i> Nuevo movimiento</a>
+    </div>
+</div>
+
+<div class="card-eo mb-3">
+    <div class="card-body">
+        <form asp-action="Movimientos" method="get" class="filter-bar">
+            <div>
+                <label asp-for="FechaInicio" class="form-label small fw-semibold"></label>
+                <input asp-for="FechaInicio" class="form-control" type="date" />
+            </div>
+            <div>
+                <label asp-for="FechaFin" class="form-label small fw-semibold"></label>
+                <input asp-for="FechaFin" class="form-control" type="date" />
+            </div>
+            <div style="min-width: 190px;">
+                <label asp-for="ProductoId" class="form-label small fw-semibold"></label>
+                <select asp-for="ProductoId" asp-items="Model.Productos" class="form-select"><option value="">Todos</option></select>
+            </div>
+            <div style="min-width: 180px;">
+                <label asp-for="PuntoVentaId" class="form-label small fw-semibold"></label>
+                <select asp-for="PuntoVentaId" asp-items="Model.PuntosVenta" class="form-select"><option value="">Todos</option></select>
+            </div>
+            <div style="min-width: 170px;">
+                <label asp-for="Tipo" class="form-label small fw-semibold"></label>
+                <select asp-for="Tipo" asp-items="Html.GetEnumSelectList<TipoMovimiento>()" class="form-select"><option value="">Todos</option></select>
+            </div>
+            <button type="submit" class="btn btn-eo"><i class="bi bi-search"></i> Filtrar</button>
+            <a asp-action="Movimientos" class="btn btn-light">Limpiar</a>
+        </form>
+    </div>
+</div>
+
+<div class="card-eo">
+    <div class="card-body p-0">
+        <div class="table-responsive">
+            <table class="table table-eo mb-0">
+                <thead>
+                    <tr>
+                        <th>Fecha</th>
+                        <th>Producto</th>
+                        <th>Tipo</th>
+                        <th>Ambiente</th>
+                        <th>Destino</th>
+                        <th class="text-center">Cant.</th>
+                        <th class="text-center">Stock</th>
+                        <th>Usuario / motivo</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @if (Model.Items.Count == 0)
+                    {
+                        <tr><td colspan="8" class="empty-state">No hay movimientos registrados.</td></tr>
+                    }
+                    @foreach (var movimiento in Model.Items)
+                    {
+                        <tr>
+                            <td>@movimiento.Fecha.ToString("dd/MM/yyyy HH:mm")</td>
+                            <td><strong>@movimiento.Producto</strong></td>
+                            <td><span class="badge-eo">@movimiento.Tipo</span></td>
+                            <td>@movimiento.Ambiente</td>
+                            <td>@movimiento.AmbienteDestino</td>
+                            <td class="text-center fw-bold @(movimiento.Cantidad < 0 ? "text-danger" : "text-success")">@movimiento.Cantidad</td>
+                            <td class="text-center"><small class="text-muted">@movimiento.StockAnterior → @movimiento.StockPosterior</small></td>
+                            <td>
+                                <strong>@movimiento.Usuario</strong><br />
+                                <small class="text-muted">@movimiento.Motivo</small>
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>

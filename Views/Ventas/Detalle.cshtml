@@ -1,0 +1,22 @@
+@model VentaDetalleViewModel
+@{
+    ViewData["Title"] = "Detalle de venta";
+}
+
+<div class="page-heading no-print">
+    <div>
+        <h1>@Model.Venta.NumeroComprobante</h1>
+        <p>Detalle de la venta registrada el @Model.Venta.Fecha.ToString("dd/MM/yyyy HH:mm").</p>
+    </div>
+    <div>
+        <a asp-action="Historial" class="btn btn-light"><i class="bi bi-arrow-left"></i> Volver</a>
+        <a asp-action="Reimprimir" asp-route-id="@Model.Venta.VentaId" class="btn btn-eo"><i class="bi bi-printer"></i> Reimprimir</a>
+    </div>
+</div>
+
+@if (!string.IsNullOrWhiteSpace(Model.Observaciones))
+{
+    <div class="alert alert-light border mb-3 no-print"><strong>Observaciones:</strong> @Model.Observaciones</div>
+}
+
+<partial name="_Comprobante" model="Model.Venta" />
