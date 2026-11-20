@@ -27,11 +27,11 @@
                             <label asp-for="PuntoVentaId" class="form-label fw-semibold"></label>
                             @if (Model.EsAdministrador)
                             {
-                                <select id="PuntoVentaId" asp-for="PuntoVentaId" asp-items="Model.PuntosVenta" class="form-select"></select>
+                                <select id="PuntoVentaIdSelect" asp-for="PuntoVentaId" asp-items="Model.PuntosVenta" class="form-select" aria-label="Punto de venta"></select>
                             }
                             else
                             {
-                                <select id="PuntoVentaId" asp-for="PuntoVentaId" asp-items="Model.PuntosVenta" class="form-select" disabled></select>
+                                <select id="PuntoVentaIdSelect" asp-for="PuntoVentaId" asp-items="Model.PuntosVenta" class="form-select" disabled aria-label="Punto de venta"></select>
                                 <input type="hidden" asp-for="PuntoVentaId" />
                             }
                             <span asp-validation-for="PuntoVentaId" class="text-danger"></span>

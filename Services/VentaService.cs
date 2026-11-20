@@ -131,10 +131,6 @@ public sealed class VentaService(ElOfertonDbContext db, IProductoService product
             vuelto = ServicioAyuda.Redondear(montoRecibido.Value - total);
         }
 
-        var stocks = await db.Inventarios.AsNoTracking()
-            .Where(i => i.PuntoVentaId == model.PuntoVentaId && productoIds.Contains(i.ProductoId))
-            .ToDictionaryAsync(i => i.ProductoId, i => i.Cantidad);
-
         var estrategia = db.Database.CreateExecutionStrategy();
         return await estrategia.ExecuteAsync(async () =>
         {
@@ -162,6 +158,10 @@ public sealed class VentaService(ElOfertonDbContext db, IProductoService product
                         };
                     }
                 }
+
+                var stocks = await db.Inventarios.AsNoTracking()
+                    .Where(i => i.PuntoVentaId == model.PuntoVentaId && productoIds.Contains(i.ProductoId))
+                    .ToDictionaryAsync(i => i.ProductoId, i => i.Cantidad);
 
                 var numeroComprobante = $"V-{Reloj.Ahora:yyyyMMdd}-{Guid.NewGuid().ToString("N")[..6].ToUpperInvariant()}";
                 var venta = new Venta
@@ -199,7 +199,8 @@ public sealed class VentaService(ElOfertonDbContext db, IProductoService product
                         Subtotal = linea.Subtotal
                     });
 
-                    var anterior = stocks.GetValueOrDefault(linea.Producto.Id);
+                    var posterior = stocks.GetValueOrDefault(linea.Producto.Id);
+                    var anterior = posterior + linea.Cantidad;
                     db.MovimientosInventario.Add(new MovimientoInventario
                     {
                         Fecha = Reloj.Ahora,
@@ -211,7 +212,7 @@ public sealed class VentaService(ElOfertonDbContext db, IProductoService product
                         UsuarioId = usuarioId,
                         Motivo = $"Venta {numeroComprobante}",
                         StockAnterior = anterior,
-                        StockPosterior = anterior - linea.Cantidad
+                        StockPosterior = posterior
                     });
                 }
 

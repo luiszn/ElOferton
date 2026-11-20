@@ -33,8 +33,7 @@
                         <option value="1">Entrada</option>
                         <option value="2">Salida</option>
                         <option value="3">Ajuste</option>
-                        <option value="5">Traspaso entrada</option>
-                        <option value="6">Traspaso salida</option>
+                        <option value="6">Traspaso entre ambientes</option>
                     </select>
                     <span asp-validation-for="Tipo" class="text-danger"></span>
                 </div>
@@ -82,7 +81,7 @@
 
             function actualizarDestino() {
                 var valor = parseInt(tipo.value, 10);
-                destinoGroup.style.display = (valor === 5 || valor === 6) ? '' : 'none';
+                destinoGroup.style.display = valor === 6 ? '' : 'none';
                 cantidad.min = valor === 3 ? '-100000' : '1';
             }
 
@@ -106,7 +105,7 @@
             document.getElementById('movimientoForm').addEventListener('submit', function (event) {
                 var valor = parseInt(tipo.value, 10);
                 var cantidadValor = parseInt(cantidad.value, 10);
-                if ((valor === 5 || valor === 6) && ambiente.value === destino.value) {
+                if (valor === 6 && ambiente.value === destino.value) {
                     event.preventDefault();
                     alert('El ambiente destino debe ser distinto al origen.');
                 }

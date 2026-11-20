@@ -80,7 +80,9 @@ public sealed class InventarioService(ElOfertonDbContext db) : IInventarioServic
                         ProductoId = m.ProductoId,
                         Producto = p.Nombre,
                         TipoMovimiento = m.Tipo,
-                        Tipo = m.Tipo.ToString(),
+                        Tipo = m.Tipo == TipoMovimiento.TraspasoSalida || m.Tipo == TipoMovimiento.TraspasoEntrada
+                            ? "Traspaso entre ambientes"
+                            : m.Tipo.ToString(),
                         Cantidad = m.Cantidad,
                         PuntoVentaId = m.PuntoVentaId,
                         Ambiente = pv.Nombre,
@@ -171,85 +173,91 @@ public sealed class InventarioService(ElOfertonDbContext db) : IInventarioServic
             return ResultadoOperacion.Error("La cantidad del traspaso debe ser positiva.");
         }
 
-        await using var transaccion = await db.Database.BeginTransactionAsync();
-
-        try
+        var delta = model.Tipo switch
         {
-            await AsegurarInventarioAsync(model.ProductoId, model.PuntoVentaId);
+            TipoMovimiento.Entrada => Math.Abs(cantidad),
+            TipoMovimiento.Salida => -Math.Abs(cantidad),
+            TipoMovimiento.Ajuste => cantidad,
+            TipoMovimiento.TraspasoSalida => -Math.Abs(cantidad),
+            _ => 0
+        };
 
-            var anterior = await ObtenerStockAsync(model.ProductoId, model.PuntoVentaId);
-            var delta = model.Tipo switch
+        if (delta == 0)
+        {
+            return ResultadoOperacion.Error("El tipo de movimiento no es válido.");
+        }
+
+        var cantidadTraspaso = Math.Abs(cantidad);
+        var estrategia = db.Database.CreateExecutionStrategy();
+        return await estrategia.ExecuteAsync(async () =>
+        {
+            await using var transaccion = await db.Database.BeginTransactionAsync();
+
+            try
             {
-                TipoMovimiento.Entrada => Math.Abs(cantidad),
-                TipoMovimiento.Salida => -Math.Abs(cantidad),
-                TipoMovimiento.Ajuste => cantidad,
-                TipoMovimiento.TraspasoSalida => -Math.Abs(cantidad),
-                _ => 0
-            };
+                await AsegurarInventarioAsync(model.ProductoId, model.PuntoVentaId);
 
-            if (delta == 0)
-            {
-                return ResultadoOperacion.Error("El tipo de movimiento no es válido.");
-            }
+                var afectados = await db.Inventarios
+                    .Where(i => i.ProductoId == model.ProductoId
+                                && i.PuntoVentaId == model.PuntoVentaId
+                                && i.Cantidad + delta >= 0)
+                    .ExecuteUpdateAsync(s => s.SetProperty(i => i.Cantidad, i => i.Cantidad + delta));
 
-            var afectados = await db.Inventarios
-                .Where(i => i.ProductoId == model.ProductoId
-                            && i.PuntoVentaId == model.PuntoVentaId
-                            && i.Cantidad + delta >= 0)
-                .ExecuteUpdateAsync(s => s.SetProperty(i => i.Cantidad, i => i.Cantidad + delta));
+                if (afectados == 0)
+                {
+                    return ResultadoOperacion.Error("No hay stock suficiente para realizar el movimiento.");
+                }
 
-            if (afectados == 0)
-            {
-                return ResultadoOperacion.Error("No hay stock suficiente para realizar el movimiento.");
-            }
-
-            var posterior = anterior + delta;
-            db.MovimientosInventario.Add(new MovimientoInventario
-            {
-                Fecha = Reloj.Ahora,
-                ProductoId = model.ProductoId,
-                Tipo = model.Tipo == TipoMovimiento.TraspasoSalida ? TipoMovimiento.TraspasoSalida : model.Tipo,
-                Cantidad = delta,
-                PuntoVentaId = model.PuntoVentaId,
-                PuntoVentaDestinoId = esTraspaso ? model.PuntoVentaDestinoId : null,
-                UsuarioId = usuarioId,
-                Motivo = motivo,
-                StockAnterior = anterior,
-                StockPosterior = posterior
-            });
-
-            if (esTraspaso)
-            {
-                var destinoId = model.PuntoVentaDestinoId!.Value;
-                await AsegurarInventarioAsync(model.ProductoId, destinoId);
-                var anteriorDestino = await ObtenerStockAsync(model.ProductoId, destinoId);
-
-                await db.Inventarios
-                    .Where(i => i.ProductoId == model.ProductoId && i.PuntoVentaId == destinoId)
-                    .ExecuteUpdateAsync(s => s.SetProperty(i => i.Cantidad, i => i.Cantidad + Math.Abs(cantidad)));
-
+                var posterior = await ObtenerStockAsync(model.ProductoId, model.PuntoVentaId);
+                var anterior = posterior - delta;
                 db.MovimientosInventario.Add(new MovimientoInventario
                 {
                     Fecha = Reloj.Ahora,
                     ProductoId = model.ProductoId,
-                    Tipo = TipoMovimiento.TraspasoEntrada,
-                    Cantidad = Math.Abs(cantidad),
-                    PuntoVentaId = destinoId,
+                    Tipo = model.Tipo,
+                    Cantidad = delta,
+                    PuntoVentaId = model.PuntoVentaId,
+                    PuntoVentaDestinoId = esTraspaso ? model.PuntoVentaDestinoId : null,
                     UsuarioId = usuarioId,
                     Motivo = motivo,
-                    StockAnterior = anteriorDestino,
-                    StockPosterior = anteriorDestino + Math.Abs(cantidad)
+                    StockAnterior = anterior,
+                    StockPosterior = posterior
                 });
-            }
 
-            await db.SaveChangesAsync();
-            await transaccion.CommitAsync();
-            return ResultadoOperacion.Ok("Movimiento registrado correctamente.");
-        }
-        catch (DbUpdateException)
-        {
-            return ResultadoOperacion.Error("No se pudo registrar el movimiento. Intente nuevamente.");
-        }
+                if (esTraspaso)
+                {
+                    var destinoId = model.PuntoVentaDestinoId!.Value;
+                    await AsegurarInventarioAsync(model.ProductoId, destinoId);
+
+                    await db.Inventarios
+                        .Where(i => i.ProductoId == model.ProductoId && i.PuntoVentaId == destinoId)
+                        .ExecuteUpdateAsync(s => s.SetProperty(i => i.Cantidad, i => i.Cantidad + cantidadTraspaso));
+
+                    var posteriorDestino = await ObtenerStockAsync(model.ProductoId, destinoId);
+                    var anteriorDestino = posteriorDestino - cantidadTraspaso;
+                    db.MovimientosInventario.Add(new MovimientoInventario
+                    {
+                        Fecha = Reloj.Ahora,
+                        ProductoId = model.ProductoId,
+                        Tipo = TipoMovimiento.TraspasoEntrada,
+                        Cantidad = cantidadTraspaso,
+                        PuntoVentaId = destinoId,
+                        UsuarioId = usuarioId,
+                        Motivo = motivo,
+                        StockAnterior = anteriorDestino,
+                        StockPosterior = posteriorDestino
+                    });
+                }
+
+                await db.SaveChangesAsync();
+                await transaccion.CommitAsync();
+                return ResultadoOperacion.Ok("Movimiento registrado correctamente.");
+            }
+            catch (DbUpdateException)
+            {
+                return ResultadoOperacion.Error("No se pudo registrar el movimiento. Intente nuevamente.");
+            }
+        });
     }
 
     private async Task AsegurarInventarioAsync(int productoId, int puntoVentaId)

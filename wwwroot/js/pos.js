@@ -13,7 +13,7 @@
         var results = document.getElementById('productosResultados');
         var productosModo = document.getElementById('productosModo');
         var carritoBody = document.getElementById('carritoBody');
-        var puntoSelect = document.getElementById('PuntoVentaId');
+        var puntoSelect = document.getElementById('PuntoVentaIdSelect') || document.getElementById('PuntoVentaId');
         var metodoSelect = document.getElementById('MetodoPagoId');
         var porcentajeInput = document.getElementById('PorcentajeDescuento');
         var montoInput = document.getElementById('MontoRecibido');
@@ -201,7 +201,7 @@
             render();
         }
 
-        function buscar(terminoBusqueda) {
+        function buscar(terminoBusqueda, despuesDeBuscar) {
             var termino = terminoBusqueda === undefined ? searchInput.value.trim() : terminoBusqueda;
             var puntoVentaId = parseInt(puntoSelect.value, 10);
             if (!puntoVentaId) {
@@ -241,6 +241,9 @@
                             ? 'No se encontraron productos con ese nombre, código, categoría o marca.'
                             : 'No hay productos sugeridos con stock en este ambiente.';
                         results.appendChild(mensaje);
+                        if (despuesDeBuscar) {
+                            despuesDeBuscar(productos);
+                        }
                         return;
                     }
 
@@ -278,6 +281,10 @@
                         });
                         results.appendChild(boton);
                     });
+
+                    if (despuesDeBuscar) {
+                        despuesDeBuscar(productos);
+                    }
                 })
                 .catch(function (error) {
                     if (error && error.name === 'AbortError') {
@@ -294,6 +301,34 @@
                 return;
             }
             timer = window.setTimeout(buscar, 150);
+        });
+
+        searchInput.addEventListener('keydown', function (event) {
+            if (event.key !== 'Enter' && event.keyCode !== 13) {
+                return;
+            }
+
+            event.preventDefault();
+            window.clearTimeout(timer);
+            var codigo = searchInput.value.trim();
+            if (!codigo) {
+                buscar('');
+                return;
+            }
+
+            buscar(codigo, function (productos) {
+                var exacto = productos.find(function (producto) {
+                    return producto.codigo.toUpperCase() === codigo.toUpperCase();
+                });
+                if (!exacto) {
+                    return;
+                }
+
+                agregar(exacto);
+                searchInput.value = '';
+                buscar('');
+                searchInput.focus();
+            });
         });
 
         puntoSelect.addEventListener('change', function () {
