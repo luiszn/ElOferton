@@ -128,7 +128,7 @@ El sistema implementa control de acceso basado en roles (**RBAC**):
 ### 1. Clonar o abrir el repositorio
 Abre una terminal en la carpeta del proyecto:
 ```powershell
-cd c:\Users\luisd\OneDrive\Escritorio\IA\ElOferton
+cd c:\Users\luisd\ElOferton
 ```
 
 ### 2. Configurar la Cadena de Conexión
